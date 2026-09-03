@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Misión: 3 Meses | Para Bellotita 🌷</title>
+
+  <!-- iOS PWA meta tags -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Infinity Bellotita" />
+  <meta name="theme-color" content="#0a0518" />
+
+  <!-- Manifest PWA -->
+  <link rel="manifest" href='data:application/manifest+json,{"name":"Misión Infinity 3 Meses","short_name":"Bellotita🌷","start_url":".","display":"standalone","background_color":"#0a0518","theme_color":"#ff2a85"}' />
+
+  <style>
+    :root {
+      --bg: #0a0518;
+      --card-bg: rgba(22, 13, 41, 0.75);
+      --neon-pink: #ff2a85;
+      --neon-cyan: #00f0ff;
+      --neon-purple: #9d4edd;
+      --neon-green: #39ff14;
+      --safe-top: env(safe-area-inset-top, 20px);
+      --safe-bottom: env(safe-area-inset-bottom, 20px);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    body {
+      background: radial-gradient(circle at 50% 10%, #200b3b 0%, var(--bg) 70%);
+      color: #fff;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+      padding-top: var(--safe-top);
+      padding-bottom: calc(var(--safe-bottom) + 30px);
+    }
+
+    /* Pantalla de desbloqueo (Para saltar el bloqueo de audio de iOS) */
+    #welcome-screen {
+      position: fixed;
+      top: 0; left: 0; width: 100vw; height: 100vh;
+      background: #0a0518;
+      z-index: 100;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      transition: opacity 1s ease-out;
+    }
+
+    .unlock-btn {
+      background: linear-gradient(135deg, var(--neon-pink), var(--neon-purple));
+      border: none;
+      color: white;
+      padding: 16px 32px;
+      font-size: 1.2rem;
+      font-weight: 800;
+      border-radius: 999px;
+      box-shadow: 0 0 25px rgba(255, 42, 133, 0.6);
+      cursor: pointer;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(1); box-shadow: 0 0 15px rgba(255,42,133,0.5); }
+      50% { transform: scale(1.05); box-shadow: 0 0 35px rgba(255,42,133,0.8); }
+      100% { transform: scale(1); box-shadow: 0 0 15px rgba(255,42,133,0.5); }
+    }
+
+    /* Fondo de tulipanes flotantes */
+    #canvas-tulips {
+      position: fixed;
+      top: 0; left: 0; width: 100vw; height: 100vh;
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.35;
+    }
+
+    #main-content {
+      display: none; /* Se muestra tras el clic inicial */
+      position: relative;
+      z-index: 1;
+      padding: 18px;
+      max-width: 440px;
+      margin: 0 auto;
+      flex-direction: column;
+      gap: 22px;
+    }
+
+    /* Top Bar */
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(16px);
+      padding: 10px 16px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .badge-counter {
+      font-size: 0.85rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      color: var(--neon-pink);
+      text-transform: uppercase;
+    }
+
+    .now-playing {
+      font-size: 0.75rem;
+      color: rgba(255,255,255,0.7);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .sound-bars {
+      display: flex;
+      gap: 2px;
+      height: 12px;
+      align-items: flex-end;
+    }
+
+    .bar {
+      width: 3px;
+      background: var(--neon-cyan);
+      animation: soundBar 1s infinite alternate;
+    }
+    .bar:nth-child(2) { animation-duration: 0.8s; }
+    .bar:nth-child(3) { animation-duration: 1.2s; }
+
+    @keyframes soundBar {
+      0% { height: 3px; }
+      100% { height: 12px; }
+    }
+
+    /* Hero Header */
+    .hero { text-align: center; padding: 14px 10px; }
+    .hero h1 {
+      font-size: 2rem; font-weight: 900; letter-spacing: -0.02em;
+      background: linear-gradient(180deg, #ffffff 40%, #ff80bf 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      margin-bottom: 6px;
+    }
+    .hero p { font-size: 0.95rem; color: rgba(255, 255, 255, 0.8); }
+    .hero .date-pill {
+      display: inline-block; margin-top: 10px; padding: 6px 14px;
+      background: rgba(0, 240, 255, 0.12);
+      border: 1px solid var(--neon-cyan);
+      border-radius: 20px; color: var(--neon-cyan);
+      font-size: 0.82rem; font-weight: 700; letter-spacing: 0.05em;
+    }
+
+    /* Attraction Cards */
+    .section-title {
+      font-size: 1.1rem; font-weight: 800; letter-spacing: 0.05em;
+      text-transform: uppercase; color: #ffd166;
+    }
+    .cards-grid { display: flex; flex-direction: column; gap: 16px; }
+    .card {
+      background: var(--card-bg);
+      backdrop-filter: blur(20px);
+      border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.12);
+      padding: 16px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+    }
+    .card h3 { font-size: 1.05rem; font-weight: 700; margin-bottom: 4px; }
+    .card p { font-size: 0.82rem; color: rgba(255, 255, 255, 0.7); margin-bottom: 12px; line-height: 1.35; }
+
+    /* Interactive Elements inside Cards */
+    .laser-box {
+      height: 90px; background: #02020a; border-radius: 12px; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; cursor: pointer;
+    }
+    .laser-line {
+      position: absolute; width: 100%; height: 3px; background: #ff0055; box-shadow: 0 0 10px #ff0055, 0 0 20px #ff0055; animation: laserScan 2s infinite ease-in-out alternate;
+    }
+    .laser-line:nth-child(2) {
+      animation: laserScan 1.6s infinite ease-in-out alternate-reverse; transform: rotate(15deg); background: #00f0ff; box-shadow: 0 0 10px #00f0ff;
+    }
+    @keyframes laserScan { 0% { top: 15%; } 100% { top: 80%; } }
+
+    .kubiks-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+    .kubik-tile { height: 48px; background: rgba(255, 255, 255, 0.08); border-radius: 8px; cursor: pointer; transition: 0.15s; }
+    .kubik-tile.active { background: var(--neon-cyan); box-shadow: 0 0 15px var(--neon-cyan); }
+
+    .claw-stage { height: 100px; background: #110924; border-radius: 12px; position: relative; display: flex; flex-direction: column; align-items: center; }
+    .claw { font-size: 1.8rem; position: absolute; top: 4px; transition: transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+    .claw-target { position: absolute; bottom: 8px; font-size: 1.4rem; }
+
+    .holo-box { height: 80px; background: linear-gradient(135deg, rgba(255,42,133,0.1), rgba(0,240,255,0.1)); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.8rem; letter-spacing: 12px; animation: holoShift 3s infinite linear; }
+    @keyframes holoShift { 0% { filter: hue-rotate(0deg); } 100% { filter: hue-rotate(360deg); } }
+
+    /* Final Invitation Card */
+    .invite-box { background: linear-gradient(180deg, rgba(255, 42, 133, 0.2), rgba(157, 78, 221, 0.3)); border: 1.5px solid var(--neon-pink); border-radius: 24px; padding: 24px 18px; text-align: center; }
+    .invite-box h2 { font-size: 1.5rem; margin-bottom: 8px; }
+    .location-info { font-size: 0.85rem; color: rgba(255, 255, 255, 0.85); margin: 12px 0 18px; line-height: 1.4; }
+    
+    .btn-main {
+      width: 100%; background: linear-gradient(90deg, #ff2a85, #ff7b00); border: none; color: white; font-weight: 800; font-size: 1rem; padding: 15px; border-radius: 16px; box-shadow: 0 6px 20px rgba(255, 42, 133, 0.5); cursor: pointer;
+    }
+    .btn-map {
+      margin-top: 10px; background: transparent; border: 1px solid rgba(255, 255, 255, 0.3); color: #fff; font-size: 0.85rem; padding: 10px; border-radius: 12px; width: 100%; cursor: pointer;
+    }
+
+    /* Modal */
+    .modal { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.8); display: none; align-items: center; justify-content: center; z-index: 99; padding: 20px; }
+    .modal-content { background: #190e2f; border: 2px solid var(--neon-cyan); border-radius: 24px; padding: 24px; text-align: center; box-shadow: 0 0 35px var(--neon-cyan); }
+  </style>
+</head>
+<body>
+
+  <!-- Elemento de Audio (Innerbloom) -->
+  <audio id="bgMusic" src="innerbloom.mp3" loop preload="auto"></audio>
+
+  <!-- Pantalla de Desbloqueo Inicial -->
+  <div id="welcome-screen">
+    <h2 style="margin-bottom: 20px; font-size: 1.2rem; color: var(--neon-cyan); font-weight: 600;">Tienes un mensaje nuevo 🌷</h2>
+    <button class="unlock-btn" onclick="startExperience()">Abrir Invitación</button>
+  </div>
+
+  <canvas id="canvas-tulips"></canvas>
+
+  <div id="main-content">
+    <!-- Status & Now Playing -->
+    <div class="top-bar">
+      <span class="badge-counter">🌷 3 Meses</span>
+      <div class="now-playing">
+        <div class="sound-bars">
+          <div class="bar"></div><div class="bar"></div><div class="bar"></div>
+        </div>
+        RÜFÜS DU SOL - Innerbloom
+      </div>
+    </div>
+
+    <!-- Hero -->
+    <div class="hero">
+      <h1>¡Felices 3 Meses, Bellotita! 🌷</h1>
+      <p>Nuestra próxima aventura inmersiva ya tiene coordenadas.</p>
+      <div class="date-pill">SÁBADO 5 DE SETIEMBRE • SURCO</div>
+    </div>
+
+    <div class="section-title">Nuestras Misiones en Infinity Park</div>
+
+    <div class="cards-grid">
+      <!-- Laser Maze -->
+      <div class="card">
+        <h3>⚡ Laser Maze</h3>
+        <p>Prueba de reflejos. ¡Toca el radar para esquivar los rayos!</p>
+        <div class="laser-box" onclick="triggerLaser(this)">
+          <div class="laser-line"></div>
+          <div class="laser-line"></div>
+          <span id="laserStatus" style="z-index: 2; font-size: 0.8rem; font-weight: 700; color: var(--neon-green);">RADAR ACTIVO</span>
+        </div>
+      </div>
+
+      <!-- Kubiks -->
+      <div class="card">
+        <h3>🟩 Kubiks</h3>
+        <p>Agilidad al ritmo del beat. Toca los cubos iluminados:</p>
+        <div class="kubiks-grid" id="kubiksGrid">
+          <div class="kubik-tile" onclick="hitKubik(this)"></div><div class="kubik-tile" onclick="hitKubik(this)"></div>
+          <div class="kubik-tile" onclick="hitKubik(this)"></div><div class="kubik-tile" onclick="hitKubik(this)"></div>
+          <div class="kubik-tile" onclick="hitKubik(this)"></div><div class="kubik-tile" onclick="hitKubik(this)"></div>
+          <div class="kubik-tile" onclick="hitKubik(this)"></div><div class="kubik-tile" onclick="hitKubik(this)"></div>
+        </div>
+      </div>
+
+      <!-- Garra Humana -->
+      <div class="card">
+        <h3>🕹️ Garra Humana</h3>
+        <p>¿Quién atrapa el premio? ¡Toca para soltar la garra!</p>
+        <div class="claw-stage" onclick="dropClaw()">
+          <div class="claw" id="theClaw">🦞</div>
+          <div class="claw-target">🌷 🎁</div>
+        </div>
+      </div>
+
+      <!-- Fun Space -->
+      <div class="card">
+        <h3>🔮 Hologramas & Salas Inmersivas</h3>
+        <p>Ilusiones ópticas, fondos submarinos y piscina de pelotas lúdica.</p>
+        <div class="holo-box" onclick="rotateHolo(this)">
+          🫧 🌀 🪩 🌌
+        </div>
+      </div>
+    </div>
+
+    <!-- Final RSVP -->
+    <div class="invite-box">
+      <h2>¿Lista para la cita? 💖</h2>
+      <div class="location-info">
+        📍 <strong>Infinity Park</strong><br />
+        Calle Laderas de las Casuarinas 151, Santiago de Surco<br />
+        <em>Celebrando nuestros 3 meses al ritmo de RÜFÜS.</em>
+      </div>
+      <button class="btn-main" onclick="acceptMission()">
+        ¡ACEPTO LA MISIÓN, MI AMOR! 🌷
+      </button>
+      <button class="btn-map" onclick="openMap()">
+        🗺️ Ver ubicación en Maps
+      </button>
+    </div>
+  </div>
+
+  <!-- Modal Confirmación -->
+  <div class="modal" id="rsvpModal" onclick="closeModal()">
+    <div class="modal-content" onclick="event.stopPropagation()">
+      <h2 style="font-size: 2rem; margin-bottom: 8px;">🌷✨ ¡MISIÓN CONFIRMADA! ✨🌷</h2>
+      <p style="margin: 12px 0; color: rgba(255,255,255,0.9); font-size: 0.95rem;">
+        Queda agendado para este <strong>sábado 5 de setiembre</strong>.<br>
+        ¡Prepárate para esquivar lásers y romper la pista, Bellotita!
+      </p>
+      <button class="btn-main" style="margin-top: 14px;" onclick="closeModal()">¡Nos vemos ahí! 💖</button>
+    </div>
+  </div>
+
+  <script>
+    /* Iniciar la experiencia (Desbloquea el Audio) */
+    function startExperience() {
+      const music = document.getElementById('bgMusic');
+      music.volume = 0.6; // Volumen agradable
+      music.play().catch(e => console.log("Audio autoplay prevenido:", e));
+
+      const welcome = document.getElementById('welcome-screen');
+      welcome.style.opacity = '0';
+      
+      setTimeout(() => {
+        welcome.style.display = 'none';
+        document.getElementById('main-content').style.display = 'flex';
+        renderTulips(); // Empieza la animación de tulipanes
+      }, 500);
+    }
+
+    /* Generador de Tulipanes de Neón en Canvas */
+    const canvas = document.getElementById('canvas-tulips');
+    const ctx = canvas.getContext('2d');
+    let tulips = [];
+
+    function resize() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    for (let i = 0; i < 22; i++) {
+      tulips.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        size: 16 + Math.random() * 18,
+        speedY: 0.4 + Math.random() * 0.7,
+        alpha: 0.2 + Math.random() * 0.6
+      });
+    }
+
+    function renderTulips() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      tulips.forEach(t => {
+        ctx.font = `${t.size}px serif`;
+        ctx.globalAlpha = t.alpha;
+        ctx.fillText('🌷', t.x, t.y);
+        t.y -= t.speedY;
+        if (t.y < -30) t.y = canvas.height + 20;
+      });
+      requestAnimationFrame(renderTulips);
+    }
+
+    /* Interacciones de Juegos */
+    function triggerLaser(box) {
+      const status = document.getElementById('laserStatus');
+      status.innerText = "¡REFLEJOS ACTIVADOS! ⚡";
+      status.style.color = "#00f0ff";
+      if (navigator.vibrate) navigator.vibrate([40, 30, 40]);
+      setTimeout(() => {
+        status.innerText = "RADAR ACTIVO";
+        status.style.color = "#39ff14";
+      }, 1500);
+    }
+
+    function hitKubik(tile) {
+      tile.classList.toggle('active');
+      if (navigator.vibrate) navigator.vibrate(25);
+    }
+
+    setInterval(() => {
+      const tiles = document.querySelectorAll('.kubik-tile');
+      const rand = Math.floor(Math.random() * tiles.length);
+      tiles[rand].classList.add('active');
+      setTimeout(() => tiles[rand].classList.remove('active'), 500);
+    }, 600);
+
+    let clawDown = false;
+    function dropClaw() {
+      if (clawDown) return;
+      clawDown = true;
+      const claw = document.getElementById('theClaw');
+      claw.style.transform = "translateY(45px) scale(1.2)";
+      if (navigator.vibrate) navigator.vibrate(50);
+      
+      setTimeout(() => {
+        claw.innerHTML = "🌷";
+        claw.style.transform = "translateY(0) scale(1)";
+        setTimeout(() => {
+          claw.innerHTML = "🦞";
+          clawDown = false;
+        }, 1200);
+      }, 700);
+    }
+
+    function rotateHolo(box) {
+      box.style.transform = "perspective(300px) rotateY(20deg) scale(1.03)";
+      setTimeout(() => box.style.transform = "none", 400);
+    }
+
+    /* Acciones Finales */
+    function acceptMission() {
+      document.getElementById('rsvpModal').style.display = 'flex';
+      if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+    }
+
+    function closeModal() {
+      document.getElementById('rsvpModal').style.display = 'none';
+    }
+
+    function openMap() {
+      window.open('https://maps.google.com/?q=Calle+Laderas+de+las+Casuarinas+151+Santiago+de+Surco', '_blank');
+    }
+  </script>
+</body>
+</html>
